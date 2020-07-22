@@ -11,5 +11,5 @@ This bot is written in Python3 ,
 deployed on Heroku ,
 used Flask to trigger webhook and get updates,
 connected to Heroku-prostgresql cloud Database,
-get Api for avatar and ip location,
+Api for avatar and ip location,
 NLTK module for Eliza chatbot.
