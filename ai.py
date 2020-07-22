@@ -2,10 +2,12 @@ import nltk
 import requests
 import json
 
+#reply when get "/start"
 def start_reply():
     bot_welcome = "welcome to Abot.\nYou can try /change"
     return bot_welcome
 
+#use adorable.io Api to send avatar when choice is cool
 def avatar(text):
     try:
            url = "https://api.adorable.io/avatars/285/{}.png".format(text.strip())
@@ -14,6 +16,7 @@ def avatar(text):
            # if things went wrong
            return 0
 
+#send ip location of user or bot when choice is ip
 def ip_location(text):
     access_key="a19c077c349b3cf8f4a10903a10b2f5e"
     if text.lower() == "bot":
