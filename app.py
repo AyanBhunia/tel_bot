@@ -19,19 +19,20 @@ app = Flask(__name__)
 
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 def respond():
-   print("start.......................")
-   
+
    # retrieve the message in JSON and then transform it to Telegram object
    update = telegram.Update.de_json(request.get_json(force=True), bot)
 
    chat_id = update.message.chat.id
    msg_id = update.message.message_id
-
-   database_url = "postgres://knrosfgbbwrkqp:6d805dd85c007e95f4b803dbd6ace35aa3098841f4f6f458f49ad81f90aaabff@ec2-52-20-248-222.compute-1.amazonaws.com:5432/d3i0b3r735oge9"
+   
+   #connect to postgresql and create cursor object to execute sql
+   database_url = <postgres database Url>
    DATABASE_URL = os.environ['DATABASE_URL']
    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
    cur = conn.cursor()
-
+   
+   #insert new chat details in DB
    def insert(cur, chat_id_inr,name):
     cur.execute("INSERT INTO users(chat_id,change,name) VALUES (%(chat)s,%(ch)s,%(name)s)", {
         'chat': chat_id_inr, 'ch': 1, 'name': name})
@@ -39,11 +40,13 @@ def respond():
    def insert_ask(cur, chat_id_inr,str):
     cur.execute("INSERT INTO users_ask(chat_id,asked) VALUES (%(chat)s,%(ask)s)", {
         'chat': chat_id_inr,'ask':str })
-
+   
+   #update user choice in DB
    def update_change(cur, chat_id, ch):
     cur.execute("UPDATE users SET change=(%(new)s) WHERE chat_id = (%(chat)s)", {
         'new': ch, 'chat': chat_id})
 
+   #available commands and their help for bot
    command_dict = {
        "/cool": 1,
        "/check": 2,
@@ -65,7 +68,6 @@ Iesha - teen anime junky,
 Rude - abusive ,
 Suntsu - Quotes from Sun Tsu’s The Art      of War ,
 Zen - Zen wisdom
-
        The chatbot structure is based on that of Eliza.
        ELIZA is a computer program that emulates a Rogerian psychotherapist.
        ELIZA is an early natural language processing computer program created from 1964 to 1966 at the MIT Artificial Intelligence Laboratory by Joseph Weizenbaum.
@@ -74,17 +76,12 @@ Zen - Zen wisdom
        """
    }
    command_help[42] = command_help[43] = command_help[44] = command_help[45] = command_help[41]
-   """
-       41: "Eliza - psycho-Therapist,",
-       42:"Iesha - teen anime junky,",
-       43:"Rude - abusive ,",
-       44: "Suntsu - Quotes from Sun Tsu’s The Art of War ,",
-       45: "Zen - Zen wisdom"
-    """
+   
    line = 1
    # Telegram understands UTF-8, so encode text for unicode compatibility
    text = update.message.text.encode('utf-8').decode()
 
+   #every new connection start by sending "/start" ; insert new chat in DB if not exits
    if text.lower() == "/start":
         # print the welcoming message
         cur.execute("SELECT * FROM users where chat_id = (%(chat_id_sql)s)", {
@@ -99,18 +96,14 @@ Zen - Zen wisdom
         # send the welcoming message
         bot.sendMessage(chat_id=chat_id, text=bot_welcome,reply_to_message_id=msg_id)
 
+   #to show available commands
    elif text.lower()=="/change":
-       msg = '''choose one of this
-For help type '/help </your command>'
-*_your command from 1st collumm_
-/cool       /Eliza
-/check      /Iesha
-/ip         /Rude
-         /Suntsu
-         /Zen
-'''
+       msg = "choose one of this \nFor help type '/help </your command>"
+       for i in command_dict[values]:
+          msg = msg +"\n" + i
        bot.sendMessage(chat_id=chat_id, text=msg, reply_to_message_id=msg_id)
-
+   
+   #change command in DB or show their help
    elif "/" == text[0].lower() or text in command_dict:
        if "/help" in text.lower():
            text=text.replace("/help"," ").strip()
@@ -134,11 +127,12 @@ For help type '/help </your command>'
        bot.sendMessage(chat_id=chat_id, text=msg, reply_to_message_id=msg_id, disable_web_page_preview=True)
 
    else:
+       #get the user choice from DB
        cur.execute("SELECT * FROM users where chat_id = (%(chat_id_sql)s)", {
            'chat_id_sql': chat_id})
        ch = cur.fetchone()
        choice=ch[1]
-       #update the ask array
+       
        
        
        if choice==1:
@@ -173,11 +167,13 @@ For help type '/help </your command>'
 	        text=text[0:49]
        insert_ask(cur, chat_id, text)
        """
+   #debug massage
    print(text)
+   
+   #commit to save any change and close DB connection
    conn.commit()
    conn.close()
    return 'ok'
-
 
 @app.route('/set_webhook', methods=['GET', 'POST'])
 def set_webhook():
@@ -192,10 +188,10 @@ def set_webhook():
 def index():
    return '.'
 
-
+'''
 @app.route('/game')
 def game():
    return render_template('game.html')
-
+'''
 if __name__ == '__main__':
    app.run(threaded=True)
